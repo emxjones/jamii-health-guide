@@ -32,7 +32,8 @@ const Login = () => {
     setIsLoading(true);
     try {
       const response = await api.login({ username, password });
-      login(response.token, username);
+      // Store a default account type for now - this should ideally come from the login response
+      login(response.token, username, 'general');
       toast({
         title: "Success",
         description: "Logged in successfully",

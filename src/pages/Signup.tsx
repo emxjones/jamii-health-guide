@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import logo from '@/assets/logo.png';
 
@@ -21,6 +22,7 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +65,15 @@ const Signup = () => {
         account_type: formData.account_type as 'pregnant' | 'postnatal' | 'general',
       });
       
+      // Auto-login after signup
+      const loginResponse = await api.login({ username: formData.username, password: formData.password });
+      login(loginResponse.token, formData.username, formData.account_type);
+      
       toast({
         title: "Success",
-        description: "Account created successfully. Please sign in.",
+        description: "Account created successfully!",
       });
-      navigate('/login');
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: "Signup Failed",

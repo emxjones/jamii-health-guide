@@ -1,72 +1,87 @@
 import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, VitalsResponse } from '@/lib/api';
-import { Activity } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Thermometer } from 'lucide-react';
 
 interface VitalsFormProps {
   onSubmitSuccess: (data: VitalsResponse) => void;
 }
 
 const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
-  const [vitals, setVitals] = useState({
-    Age: '',
-    SystolicBP: '',
-    DiastolicBP: '',
-    BS: '',
-    BodyTemp: '',
-    HeartRate: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const { token, accountType } = useAuth();
   const { toast } = useToast();
-  const { token } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [vitals, setVitals] = useState({
+    age: '',
+    systolic_bp: '',
+    diastolic_bp: '',
+    bs: '',
+    body_temp: '',
+    body_temp_unit: 'celsius' as 'celsius' | 'fahrenheit',
+    heart_rate: '',
+    patient_history: '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const numericVitals = {
-      Age: parseFloat(vitals.Age),
-      SystolicBP: parseFloat(vitals.SystolicBP),
-      DiastolicBP: parseFloat(vitals.DiastolicBP),
-      BS: parseFloat(vitals.BS),
-      BodyTemp: parseFloat(vitals.BodyTemp),
-      HeartRate: parseFloat(vitals.HeartRate),
-    };
-
-    if (Object.values(numericVitals).some(isNaN)) {
+    
+    if (!token || !accountType) {
       toast({
-        title: "Error",
-        description: "Please fill in all fields with valid numbers",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please login again',
+        variant: 'destructive',
       });
       return;
     }
 
-    setIsLoading(true);
     try {
-      const response = await api.submitVitals(numericVitals, token!);
-      toast({
-        title: "Success",
-        description: "Vitals submitted successfully",
-      });
+      setIsLoading(true);
+      const payload = {
+        vitals: {
+          age: Number(vitals.age),
+          systolic_bp: Number(vitals.systolic_bp),
+          diastolic_bp: Number(vitals.diastolic_bp),
+          bs: Number(vitals.bs),
+          body_temp: Number(vitals.body_temp),
+          body_temp_unit: vitals.body_temp_unit,
+          heart_rate: Number(vitals.heart_rate),
+          patient_history: vitals.patient_history,
+        },
+        account_type: accountType as 'pregnant' | 'postnatal' | 'general',
+      };
+
+      const response = await api.submitVitals(payload, token);
       onSubmitSuccess(response);
+      
+      toast({
+        title: 'Success',
+        description: 'Vitals submitted successfully',
+      });
+
+      // Reset form
       setVitals({
-        Age: '',
-        SystolicBP: '',
-        DiastolicBP: '',
-        BS: '',
-        BodyTemp: '',
-        HeartRate: '',
+        age: '',
+        systolic_bp: '',
+        diastolic_bp: '',
+        bs: '',
+        body_temp: '',
+        body_temp_unit: 'celsius',
+        heart_rate: '',
+        patient_history: '',
       });
     } catch (error) {
       toast({
-        title: "Submission Failed",
-        description: error instanceof Error ? error.message : "Failed to submit vitals",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit vitals',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -74,15 +89,13 @@ const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
   };
 
   return (
-    <Card>
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-primary" />
+          <Thermometer className="h-5 w-5" />
           Submit Your Vitals
         </CardTitle>
-        <CardDescription>
-          Enter your current health measurements for AI-powered risk assessment
-        </CardDescription>
+        <CardDescription>Enter your current vital signs for AI-powered risk assessment</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,76 +105,106 @@ const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
               <Input
                 id="age"
                 type="number"
-                step="1"
-                value={vitals.Age}
-                onChange={(e) => setVitals({ ...vitals, Age: e.target.value })}
+                value={vitals.age}
+                onChange={(e) => setVitals({ ...vitals, age: e.target.value })}
                 placeholder="e.g., 28"
-                disabled={isLoading}
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="systolic">Systolic BP (mmHg)</Label>
+              <Label htmlFor="heart_rate">Heart Rate (bpm)</Label>
               <Input
-                id="systolic"
+                id="heart_rate"
                 type="number"
-                step="1"
-                value={vitals.SystolicBP}
-                onChange={(e) => setVitals({ ...vitals, SystolicBP: e.target.value })}
+                value={vitals.heart_rate}
+                onChange={(e) => setVitals({ ...vitals, heart_rate: e.target.value })}
+                placeholder="e.g., 75"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="systolic_bp">Systolic BP (mmHg)</Label>
+              <Input
+                id="systolic_bp"
+                type="number"
+                value={vitals.systolic_bp}
+                onChange={(e) => setVitals({ ...vitals, systolic_bp: e.target.value })}
                 placeholder="e.g., 120"
-                disabled={isLoading}
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="diastolic">Diastolic BP (mmHg)</Label>
+              <Label htmlFor="diastolic_bp">Diastolic BP (mmHg)</Label>
               <Input
-                id="diastolic"
+                id="diastolic_bp"
                 type="number"
-                step="1"
-                value={vitals.DiastolicBP}
-                onChange={(e) => setVitals({ ...vitals, DiastolicBP: e.target.value })}
+                value={vitals.diastolic_bp}
+                onChange={(e) => setVitals({ ...vitals, diastolic_bp: e.target.value })}
                 placeholder="e.g., 80"
-                disabled={isLoading}
+                required
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="bs">Blood Sugar (mmol/L)</Label>
               <Input
                 id="bs"
                 type="number"
                 step="0.1"
-                value={vitals.BS}
-                onChange={(e) => setVitals({ ...vitals, BS: e.target.value })}
+                value={vitals.bs}
+                onChange={(e) => setVitals({ ...vitals, bs: e.target.value })}
                 placeholder="e.g., 5.5"
-                disabled={isLoading}
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="temp">Body Temperature (°C)</Label>
-              <Input
-                id="temp"
-                type="number"
-                step="0.1"
-                value={vitals.BodyTemp}
-                onChange={(e) => setVitals({ ...vitals, BodyTemp: e.target.value })}
-                placeholder="e.g., 36.5"
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="hr">Heart Rate (bpm)</Label>
-              <Input
-                id="hr"
-                type="number"
-                step="1"
-                value={vitals.HeartRate}
-                onChange={(e) => setVitals({ ...vitals, HeartRate: e.target.value })}
-                placeholder="e.g., 72"
-                disabled={isLoading}
-              />
+              <Label htmlFor="body_temp">Body Temperature</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="body_temp"
+                  type="number"
+                  step="0.1"
+                  value={vitals.body_temp}
+                  onChange={(e) => setVitals({ ...vitals, body_temp: e.target.value })}
+                  placeholder="e.g., 37.0"
+                  required
+                  className="flex-1"
+                />
+                <Select 
+                  value={vitals.body_temp_unit} 
+                  onValueChange={(value: 'celsius' | 'fahrenheit') => 
+                    setVitals({ ...vitals, body_temp_unit: value })
+                  }
+                >
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="celsius">°C</SelectItem>
+                    <SelectItem value="fahrenheit">°F</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="patient_history">Patient History (Optional)</Label>
+            <Textarea
+              id="patient_history"
+              value={vitals.patient_history}
+              onChange={(e) => setVitals({ ...vitals, patient_history: e.target.value })}
+              placeholder="Any relevant medical history or current symptoms..."
+              rows={3}
+            />
+          </div>
+
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Analyzing..." : "Submit Vitals"}
+            {isLoading ? 'Processing...' : 'Submit Vitals'}
           </Button>
         </form>
       </CardContent>

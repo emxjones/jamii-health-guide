@@ -14,27 +14,45 @@ export interface SignupData {
 }
 
 export interface VitalsData {
-  Age: number;
-  SystolicBP: number;
-  DiastolicBP: number;
-  BS: number;
-  BodyTemp: number;
-  HeartRate: number;
+  age: number;
+  systolic_bp: number;
+  diastolic_bp: number;
+  bs: number;
+  body_temp: number;
+  body_temp_unit: 'celsius' | 'fahrenheit';
+  heart_rate: number;
+  patient_history: string;
+}
+
+export interface VitalsSubmitPayload {
+  vitals: VitalsData;
+  account_type: 'pregnant' | 'postnatal' | 'general';
 }
 
 export interface VitalsResponse {
+  id: number;
   user_id: number;
-  submission_id: number;
-  timestamp: string;
-  ml_output: {
-    risk_label: string;
-    probability: number;
-    feature_importances: Record<string, number>;
-  };
-  llm_advice: {
-    advice: string;
-    timestamp: string;
-  };
+  age: number;
+  systolic_bp: number;
+  diastolic_bp: number;
+  bs: number;
+  body_temp: number;
+  body_temp_unit: string;
+  heart_rate: number;
+  patient_history: string;
+  ml_risk_label: string;
+  ml_probability: number;
+  ml_feature_importances: string;
+  created_at: string;
+}
+
+export interface ConversationResponse {
+  id: number;
+  user_id: number;
+  vitals_record_id: number;
+  user_message: string;
+  ai_response: string;
+  created_at: string;
 }
 
 export interface ChatResponse {
@@ -79,14 +97,14 @@ export const api = {
     return response.json();
   },
 
-  async submitVitals(vitals: VitalsData, token: string): Promise<VitalsResponse> {
+  async submitVitals(payload: VitalsSubmitPayload, token: string): Promise<VitalsResponse> {
     const response = await fetch(`${API_BASE_URL}/api/v1/vitals/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify(vitals),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -131,7 +149,7 @@ export const api = {
     return response.json();
   },
 
-  async getConversationsHistory(token: string): Promise<ChatResponse[]> {
+  async getConversationsHistory(token: string): Promise<ConversationResponse[]> {
     const response = await fetch(`${API_BASE_URL}/api/v1/history/conversations`, {
       method: 'GET',
       headers: {

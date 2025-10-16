@@ -7,7 +7,7 @@ import VitalsForm from '@/components/VitalsForm';
 import RiskAssessment from '@/components/RiskAssessment';
 import ChatInterface from '@/components/ChatInterface';
 import HistoryView from '@/components/HistoryView';
-import { VitalsResponse } from '@/lib/api';
+import type { VitalsResponse } from '@/lib/api';
 import { LogOut, Activity, MessageCircle, History } from 'lucide-react';
 import logo from '@/assets/logo.png';
 

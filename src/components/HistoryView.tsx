@@ -1,146 +1,201 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { api, VitalsResponse, ChatResponse } from '@/lib/api';
-import { History, MessageSquare, Activity } from 'lucide-react';
+import { api, VitalsResponse, ConversationResponse } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { Activity, MessageCircle, Loader2 } from 'lucide-react';
 
 const HistoryView = () => {
-  const [vitalsHistory, setVitalsHistory] = useState<VitalsResponse[]>([]);
-  const [chatHistory, setChatHistory] = useState<ChatResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const { token } = useAuth();
+  const { toast } = useToast();
+  const [vitalsHistory, setVitalsHistory] = useState<VitalsResponse[]>([]);
+  const [chatHistory, setChatHistory] = useState<ConversationResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadHistory();
   }, []);
 
   const loadHistory = async () => {
-    setIsLoading(true);
+    if (!token) return;
+
     try {
+      setIsLoading(true);
       const [vitals, chats] = await Promise.all([
-        api.getVitalsHistory(token!),
-        api.getConversationsHistory(token!),
+        api.getVitalsHistory(token),
+        api.getConversationsHistory(token),
       ]);
       setVitalsHistory(vitals);
       setChatHistory(chats);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load history",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load history',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getRiskColor = (riskLabel: string) => {
-    const risk = riskLabel.toLowerCase();
-    if (risk.includes('high')) return 'bg-destructive text-destructive-foreground';
-    if (risk.includes('medium') || risk.includes('moderate')) return 'bg-warning text-warning-foreground';
+  const getRiskColor = (risk: string) => {
+    const riskLower = risk.toLowerCase();
+    if (riskLower.includes('high')) return 'bg-destructive text-destructive-foreground';
+    if (riskLower.includes('medium') || riskLower.includes('moderate')) return 'bg-warning text-warning-foreground';
     return 'bg-success text-success-foreground';
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatText = (text: string) => {
+    const parts = text.split('**');
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return <strong key={index}>{part}</strong>;
+      }
+      return part;
+    });
+  };
+
   return (
-    <Card>
+    <Card className="max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" />
-          Health History
-        </CardTitle>
-        <CardDescription>
-          View your past vitals submissions and chat conversations
-        </CardDescription>
+        <CardTitle>Your Health History</CardTitle>
+        <CardDescription>View your past vitals submissions and AI conversations</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="vitals">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="vitals" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
-              Vitals
+              Vitals History
             </TabsTrigger>
-            <TabsTrigger value="chats" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
+            <TabsTrigger value="conversations" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
               Conversations
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="vitals">
-            <ScrollArea className="h-[400px] pr-4">
-              {isLoading ? (
-                <p className="text-center text-muted-foreground py-8">Loading...</p>
-              ) : vitalsHistory.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No vitals history yet</p>
-              ) : (
+
+          <TabsContent value="vitals" className="mt-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : vitalsHistory.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                No vitals history yet. Submit your first vitals assessment!
+              </div>
+            ) : (
+              <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-4">
-                  {vitalsHistory.map((vital, index) => (
-                    <Card key={index}>
+                  {vitalsHistory.map((record) => (
+                    <Card key={record.id}>
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">
-                            {new Date(vital.timestamp).toLocaleDateString()}
-                          </CardTitle>
-                          <Badge className={getRiskColor(vital.ml_output.risk_label)}>
-                            {vital.ml_output.risk_label}
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-base">
+                              {formatDate(record.created_at)}
+                            </CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                              Vitals Record #{record.id}
+                            </CardDescription>
+                          </div>
+                          <Badge className={getRiskColor(record.ml_risk_label)}>
+                            {record.ml_risk_label}
                           </Badge>
                         </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Age:</span>
+                            <span className="ml-2 font-medium">{record.age} years</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">BP:</span>
+                            <span className="ml-2 font-medium">{record.systolic_bp}/{record.diastolic_bp}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">HR:</span>
+                            <span className="ml-2 font-medium">{record.heart_rate} bpm</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">BS:</span>
+                            <span className="ml-2 font-medium">{record.bs} mmol/L</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Temp:</span>
+                            <span className="ml-2 font-medium">{record.body_temp}°{record.body_temp_unit === 'celsius' ? 'C' : 'F'}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Risk:</span>
+                            <span className="ml-2 font-medium">{(record.ml_probability * 100).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                        {record.patient_history && (
+                          <div className="pt-2 border-t">
+                            <p className="text-xs text-muted-foreground mb-1">Patient History:</p>
+                            <p className="text-sm">{record.patient_history}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </TabsContent>
+
+          <TabsContent value="conversations" className="mt-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : chatHistory.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                No conversation history yet. Start chatting with the AI!
+              </div>
+            ) : (
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-4">
+                  {chatHistory.map((conversation) => (
+                    <Card key={conversation.id}>
+                      <CardHeader>
+                        <CardTitle className="text-base">
+                          {formatDate(conversation.created_at)}
+                        </CardTitle>
                         <CardDescription className="text-xs">
-                          {new Date(vital.timestamp).toLocaleTimeString()}
+                          Conversation #{conversation.id}
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="text-sm space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Confidence:</span>
-                          <span className="font-medium">
-                            {Math.round(vital.ml_output.probability * 100)}%
-                          </span>
+                      <CardContent className="space-y-3">
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <p className="text-xs text-muted-foreground mb-1">Your Question:</p>
+                          <p className="text-sm font-medium">{conversation.user_message}</p>
                         </div>
-                        <div className="pt-2 border-t">
-                          <p className="text-xs text-muted-foreground line-clamp-3">
-                            {vital.llm_advice.advice}
+                        <div className="bg-primary/5 rounded-lg p-3">
+                          <p className="text-xs text-muted-foreground mb-1">AI Response:</p>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                            {formatText(conversation.ai_response)}
                           </p>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="chats">
-            <ScrollArea className="h-[400px] pr-4">
-              {isLoading ? (
-                <p className="text-center text-muted-foreground py-8">Loading...</p>
-              ) : chatHistory.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No chat history yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {chatHistory.map((chat, index) => (
-                    <Card key={index}>
-                      <CardHeader>
-                        <CardTitle className="text-sm">
-                          {new Date(chat.timestamp).toLocaleDateString()}
-                        </CardTitle>
-                        <CardDescription className="text-xs">
-                          {new Date(chat.timestamp).toLocaleTimeString()}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm whitespace-pre-wrap line-clamp-4">
-                          {chat.advice}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

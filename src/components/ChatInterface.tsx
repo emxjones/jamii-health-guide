@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import { MessageCircle, Send } from 'lucide-react';
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'ai';
   content: string;
   timestamp: string;
 }
@@ -45,12 +45,12 @@ const ChatInterface = () => {
 
     try {
       const response = await api.chatAdvice(input, token!);
-      const assistantMessage: Message = {
-        role: 'assistant',
+      const aiMessage: Message = {
+        role: 'ai',
         content: response.advice,
         timestamp: response.timestamp,
       };
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       toast({
         title: "Chat Error",
@@ -83,25 +83,40 @@ const ChatInterface = () => {
                 <p className="text-sm mt-1">Ask about nutrition, health concerns, or pregnancy care</p>
               </div>
             ) : (
-              messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+              messages.map((message, index) => {
+                // Format text to render bold content between ** markers
+                const formatText = (text: string) => {
+                  const parts = text.split('**');
+                  return parts.map((part, idx) => {
+                    if (idx % 2 === 1) {
+                      return <strong key={idx}>{part}</strong>;
+                    }
+                    return part;
+                  });
+                };
+
+                return (
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary text-secondary-foreground'
-                    }`}
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                    <div className="text-xs opacity-70 mt-1">
-                      {new Date(message.timestamp).toLocaleTimeString()}
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}
+                    >
+                      <div className="whitespace-pre-wrap text-sm">
+                        {message.role === 'ai' ? formatText(message.content) : message.content}
+                      </div>
+                      <div className="text-xs opacity-70 mt-1">
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
             {isLoading && (
               <div className="flex justify-start">
