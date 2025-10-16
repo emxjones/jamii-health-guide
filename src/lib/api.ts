@@ -57,7 +57,9 @@ export const api = {
       throw new Error(error.detail || 'Login failed');
     }
 
-    return response.json();
+    const data = await response.json();
+    // Handle both 'token' and 'access_token' field names
+    return { token: data.token || data.access_token };
   },
 
   async signup(data: SignupData): Promise<{ message: string }> {
