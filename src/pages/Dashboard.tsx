@@ -7,21 +7,21 @@ import VitalsForm from '@/components/VitalsForm';
 import RiskAssessment from '@/components/RiskAssessment';
 import ChatInterface from '@/components/ChatInterface';
 import HistoryView from '@/components/HistoryView';
-import type { VitalsResponse } from '@/lib/api';
+import type { VitalsSubmitResponse } from '@/lib/api';
 import { LogOut, Activity, MessageCircle, History } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 const Dashboard = () => {
   const { username, logout } = useAuth();
   const navigate = useNavigate();
-  const [latestAssessment, setLatestAssessment] = useState<VitalsResponse | null>(null);
+  const [latestAssessment, setLatestAssessment] = useState<VitalsSubmitResponse | null>(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleVitalsSubmit = (data: VitalsResponse) => {
+  const handleVitalsSubmit = (data: VitalsSubmitResponse) => {
     setLatestAssessment(data);
   };
 

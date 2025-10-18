@@ -42,8 +42,23 @@ export interface VitalsResponse {
   patient_history: string;
   ml_risk_label: string;
   ml_probability: number;
-  ml_feature_importances: string;
+  ml_feature_importances: string | Record<string, number>;
   created_at: string;
+}
+
+export interface VitalsSubmitResponse {
+  user_id: number;
+  submission_id: number;
+  timestamp: string;
+  ml_output: {
+    risk_label: string;
+    probability: number;
+    feature_importances: Record<string, number>;
+  };
+  llm_advice: {
+    advice: string;
+    timestamp: string;
+  };
 }
 
 export interface ConversationResponse {
@@ -97,7 +112,7 @@ export const api = {
     return response.json();
   },
 
-  async submitVitals(payload: VitalsSubmitPayload, token: string): Promise<VitalsResponse> {
+  async submitVitals(payload: VitalsSubmitPayload, token: string): Promise<VitalsSubmitResponse> {
     const response = await fetch(`${API_BASE_URL}/api/v1/vitals/submit`, {
       method: 'POST',
       headers: {
@@ -133,8 +148,8 @@ export const api = {
     return response.json();
   },
 
-  async getVitalsHistory(token: string): Promise<VitalsResponse[]> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/history/vitals`, {
+  async getVitalsHistory(token: string, limit: number = 10): Promise<VitalsResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/history/vitals?limit=${limit}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -149,8 +164,8 @@ export const api = {
     return response.json();
   },
 
-  async getConversationsHistory(token: string): Promise<ConversationResponse[]> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/history/conversations`, {
+  async getConversationsHistory(token: string, limit: number = 10): Promise<ConversationResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/history/conversations?limit=${limit}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

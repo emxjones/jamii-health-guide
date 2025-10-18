@@ -25,8 +25,8 @@ const HistoryView = () => {
     try {
       setIsLoading(true);
       const [vitals, chats] = await Promise.all([
-        api.getVitalsHistory(token),
-        api.getConversationsHistory(token),
+        api.getVitalsHistory(token, 10),
+        api.getConversationsHistory(token, 10),
       ]);
       setVitalsHistory(vitals);
       setChatHistory(chats);

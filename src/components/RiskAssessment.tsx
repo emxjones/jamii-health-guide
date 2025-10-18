@@ -1,10 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { VitalsResponse } from '@/lib/api';
+import { VitalsSubmitResponse } from '@/lib/api';
 import { AlertCircle, CheckCircle, AlertTriangle, Activity } from 'lucide-react';
 
 interface RiskAssessmentProps {
-  data: VitalsResponse;
+  data: VitalsSubmitResponse;
 }
 
 const RiskAssessment = ({ data }: RiskAssessmentProps) => {
@@ -22,17 +22,10 @@ const RiskAssessment = ({ data }: RiskAssessmentProps) => {
     return <CheckCircle className="h-4 w-4" />;
   };
 
-  // Parse feature importances if it's a string
-  const featureImportances = typeof data.ml_feature_importances === 'string' 
-    ? JSON.parse(data.ml_feature_importances)
-    : data.ml_feature_importances || {};
-
   // Format advice text to render bold text
   const formatAdvice = (text: string) => {
-    // Split by ** markers and render alternating segments as bold
     const parts = text.split('**');
     return parts.map((part, index) => {
-      // Odd indices (1, 3, 5...) are between ** markers, so should be bold
       if (index % 2 === 1) {
         return <strong key={index}>{part}</strong>;
       }
@@ -54,22 +47,22 @@ const RiskAssessment = ({ data }: RiskAssessmentProps) => {
           <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Risk Level</p>
-              <Badge className={`${getRiskColor(data.ml_risk_label)} flex items-center gap-1 w-fit`}>
-                {getRiskIcon(data.ml_risk_label)}
-                {data.ml_risk_label}
+              <Badge className={`${getRiskColor(data.ml_output.risk_label)} flex items-center gap-1 w-fit`}>
+                {getRiskIcon(data.ml_output.risk_label)}
+                {data.ml_output.risk_label}
               </Badge>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground mb-1">Confidence</p>
-              <p className="text-2xl font-bold">{(data.ml_probability * 100).toFixed(1)}%</p>
+              <p className="text-2xl font-bold">{(data.ml_output.probability * 100).toFixed(1)}%</p>
             </div>
           </div>
 
-          {Object.keys(featureImportances).length > 0 && (
+          {data.ml_output.feature_importances && Object.keys(data.ml_output.feature_importances).length > 0 && (
             <div>
               <h4 className="font-semibold mb-3">Key Health Indicators</h4>
               <div className="space-y-2">
-                {Object.entries(featureImportances)
+                {Object.entries(data.ml_output.feature_importances)
                   .sort(([, a], [, b]) => (b as number) - (a as number))
                   .map(([feature, importance]) => (
                     <div key={feature} className="flex items-center gap-2">
@@ -103,7 +96,7 @@ const RiskAssessment = ({ data }: RiskAssessmentProps) => {
         <CardContent>
           <div className="prose prose-sm max-w-none">
             <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-              {formatAdvice(data.ml_risk_label)}
+              {formatAdvice(data.llm_advice.advice)}
             </p>
           </div>
         </CardContent>

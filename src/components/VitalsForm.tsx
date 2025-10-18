@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { api, VitalsResponse } from '@/lib/api';
+import { api, VitalsSubmitResponse } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Thermometer } from 'lucide-react';
 
 interface VitalsFormProps {
-  onSubmitSuccess: (data: VitalsResponse) => void;
+  onSubmitSuccess: (data: VitalsSubmitResponse) => void;
 }
 
 const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
