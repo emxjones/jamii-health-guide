@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, VitalsSubmitResponse } from '@/lib/api';
@@ -27,7 +26,6 @@ const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
     body_temp: '',
     body_temp_unit: 'celsius' as 'celsius' | 'fahrenheit',
     heart_rate: '',
-    patient_history: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +51,7 @@ const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
           body_temp: Number(vitals.body_temp),
           body_temp_unit: vitals.body_temp_unit,
           heart_rate: Number(vitals.heart_rate),
-          patient_history: vitals.patient_history,
+          patient_history: '',
         },
         account_type: accountType as 'pregnant' | 'postnatal' | 'general',
       };
@@ -75,7 +73,6 @@ const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
         body_temp: '',
         body_temp_unit: 'celsius',
         heart_rate: '',
-        patient_history: '',
       });
     } catch (error) {
       toast({
@@ -190,17 +187,6 @@ const VitalsForm = ({ onSubmitSuccess }: VitalsFormProps) => {
                 </Select>
               </div>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="patient_history">Patient History (Optional)</Label>
-            <Textarea
-              id="patient_history"
-              value={vitals.patient_history}
-              onChange={(e) => setVitals({ ...vitals, patient_history: e.target.value })}
-              placeholder="Any relevant medical history or current symptoms..."
-              rows={3}
-            />
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
