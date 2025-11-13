@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 
 interface StatData {
   name: string;
@@ -13,16 +13,13 @@ const AnimatedStatistics = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [animatedValues, setAnimatedValues] = useState({
     deaths: 0,
-    lowResource: 0,
-    newborn: 0,
-    preventable: 0,
+    births: 0,
   });
   const sectionRef = useRef<HTMLDivElement>(null);
 
   const chartData: StatData[] = [
-    { name: 'Maternal Deaths', value: 295000, color: 'hsl(var(--primary))' },
-    { name: 'Newborn Deaths', value: 2400000, color: 'hsl(var(--secondary))' },
-    { name: 'Lives Saved', value: 5000000, color: 'hsl(var(--accent))' },
+    { name: 'Maternal Deaths', value: 295000, color: 'hsl(var(--destructive))' },
+    { name: 'Total Births', value: 140000000, color: 'hsl(var(--primary))' },
   ];
 
   useEffect(() => {
@@ -50,7 +47,7 @@ const AnimatedStatistics = () => {
     if (!isVisible) return;
 
     const duration = 2000;
-    const steps = 60;
+    const steps = 80;
     const interval = duration / steps;
 
     let currentStep = 0;
@@ -61,18 +58,14 @@ const AnimatedStatistics = () => {
 
       setAnimatedValues({
         deaths: Math.floor(295000 * progress),
-        lowResource: Math.floor(94 * progress),
-        newborn: Math.floor(2.4 * progress * 10) / 10,
-        preventable: Math.floor(66 * progress),
+        births: Math.floor(140000000 * progress),
       });
 
       if (currentStep >= steps) {
         clearInterval(timer);
         setAnimatedValues({
           deaths: 295000,
-          lowResource: 94,
-          newborn: 2.4,
-          preventable: 66,
+          births: 140000000,
         });
       }
     }, interval);
@@ -90,27 +83,26 @@ const AnimatedStatistics = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto items-center">
         {/* Donut Chart */}
-        <Card className="flex items-center justify-center">
-          <CardContent className="p-6">
+        <Card className="flex items-center justify-center border-primary/20 shadow-lg">
+          <CardContent className="p-8">
             <ChartContainer
               config={{
-                deaths: { label: 'Maternal Deaths', color: 'hsl(var(--primary))' },
-                newborn: { label: 'Newborn Deaths', color: 'hsl(var(--secondary))' },
-                saved: { label: 'Lives Saved', color: 'hsl(var(--accent))' },
+                deaths: { label: 'Maternal Deaths', color: 'hsl(var(--destructive))' },
+                births: { label: 'Total Births', color: 'hsl(var(--primary))' },
               }}
-              className="h-[300px] w-full"
+              className="h-[350px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={chartData}
+                    data={isVisible ? chartData : []}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={3}
                     dataKey="value"
                     animationBegin={0}
                     animationDuration={2000}
@@ -119,6 +111,22 @@ const AnimatedStatistics = () => {
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
+                    <Label
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          return (
+                            <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                              <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-2xl font-bold">
+                                Global Stats
+                              </tspan>
+                              <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground text-sm">
+                                2023 WHO Data
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
                   </Pie>
                   <ChartTooltip content={<ChartTooltipContent />} />
                 </PieChart>
@@ -128,48 +136,36 @@ const AnimatedStatistics = () => {
         </Card>
 
         {/* Animated Statistics */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="text-center">
+        <div className="space-y-6">
+          <Card className="border-destructive/20 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader>
-              <CardTitle className="text-4xl font-bold text-primary">
+              <CardTitle className="text-5xl font-bold text-destructive">
                 {animatedValues.deaths.toLocaleString()}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Maternal deaths annually worldwide</p>
+              <p className="text-base font-medium text-muted-foreground">
+                Maternal deaths annually worldwide
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                ~800 mothers die every day from preventable causes
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="border-primary/20 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader>
-              <CardTitle className="text-4xl font-bold text-primary">
-                {animatedValues.lowResource}%
+              <CardTitle className="text-5xl font-bold text-primary">
+                {(animatedValues.births / 1000000).toFixed(0)}M
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Deaths in low-resource settings</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <CardTitle className="text-4xl font-bold text-primary">
-                {animatedValues.newborn.toFixed(1)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Newborn deaths in first month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <CardTitle className="text-4xl font-bold text-primary">
-                {animatedValues.preventable}%
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Preventable with proper care</p>
+              <p className="text-base font-medium text-muted-foreground">
+                Total births globally per year
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Every birth deserves safe maternal care
+              </p>
             </CardContent>
           </Card>
         </div>
