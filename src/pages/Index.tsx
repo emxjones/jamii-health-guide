@@ -1,16 +1,27 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Activity, MessageCircle, Shield, Heart, TrendingDown, Users, Clock, Award, Mail, Phone, MapPin } from 'lucide-react';
+import { Activity, MessageCircle, Shield, Heart, Award, Mail, Phone, MapPin } from 'lucide-react';
+import AnimatedStatistics from '@/components/AnimatedStatistics';
+import Autoplay from 'embla-carousel-autoplay';
 import logo from '@/assets/logo.png';
+import pregnantWoman1 from '@/assets/pregnant-woman-1.jpg';
+import pregnantWoman2 from '@/assets/pregnant-woman-2.jpg';
+import happyFamily1 from '@/assets/happy-family-1.jpg';
+import happyFamily2 from '@/assets/happy-family-2.jpg';
 
 const Index = () => {
-  const statistics = [
-    { value: '295,000', label: 'Maternal deaths annually worldwide', icon: Users },
-    { value: '94%', label: 'Deaths in low-resource settings', icon: TrendingDown },
-    { value: '2.4M', label: 'Newborn deaths in first month', icon: Heart },
-    { value: '66%', label: 'Preventable with proper care', icon: Shield },
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: false })
+  );
+
+  const heroImages = [
+    { src: pregnantWoman1, alt: 'African pregnant woman in clinic' },
+    { src: pregnantWoman2, alt: 'African pregnant woman in garden' },
+    { src: happyFamily1, alt: 'Happy African family' },
+    { src: happyFamily2, alt: 'African family with newborn' },
   ];
 
   const testimonials = [
@@ -58,35 +69,40 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Statistics Section */}
-        <section className="mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">The Global Challenge</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Every day, approximately 800 women die from preventable causes related to pregnancy and childbirth. 
-              AfyaJamii leverages AI to bridge this healthcare gap.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {statistics.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <Card key={index} className="text-center">
-                  <CardHeader>
-                    <Icon className="h-8 w-8 text-primary mx-auto mb-2" />
-                    <CardTitle className="text-3xl font-bold text-primary">{stat.value}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Source: World Health Organization (WHO), 2023
-          </p>
+        {/* Image Carousel Section */}
+        <section className="mb-20 max-w-5xl mx-auto">
+          <Carousel 
+            plugins={[autoplayPlugin.current]}
+            className="w-full"
+            opts={{ loop: true }}
+          >
+            <CarouselContent>
+              {heroImages.map((image, index) => (
+                <CarouselItem key={index}>
+                  <div className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden">
+                    <img 
+                      src={image.src} 
+                      alt={image.alt}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end">
+                      <div className="p-8 text-white">
+                        <p className="text-lg md:text-xl font-semibold">
+                          {image.alt}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-4" />
+            <CarouselNext className="right-4" />
+          </Carousel>
         </section>
+
+        {/* Animated Statistics Section */}
+        <AnimatedStatistics />
 
         {/* Features Section */}
         <section className="mb-20">
